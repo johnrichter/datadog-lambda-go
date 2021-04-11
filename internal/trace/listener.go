@@ -20,17 +20,21 @@ import (
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
 )
 
+type TracerStartOption = tracer.StartOption
+
 type (
 	// Listener creates a function execution span and injects it into the context
 	Listener struct {
 		ddTraceEnabled  bool
 		mergeXrayTraces bool
+		startOptions    []TracerStartOption
 	}
 
 	// Config gives options for how the Listener should work
 	Config struct {
 		DDTraceEnabled  bool
 		MergeXrayTraces bool
+		StartOptions    []TracerStartOption
 	}
 )
 
@@ -43,6 +47,7 @@ func MakeListener(config Config) Listener {
 	return Listener{
 		ddTraceEnabled:  config.DDTraceEnabled,
 		mergeXrayTraces: config.MergeXrayTraces,
+		startOptions:    config.StartOptions,
 	}
 }
 
@@ -54,12 +59,13 @@ func (l *Listener) HandlerStarted(ctx context.Context, msg json.RawMessage) cont
 
 	ctx, _ = contextWithRootTraceContext(ctx, msg, l.mergeXrayTraces)
 
-	tracer.Start(
+	opts := []TracerStartOption{
 		tracer.WithService("aws.lambda"),
 		tracer.WithLambdaMode(true),
-		tracer.WithDebugMode(true),
 		tracer.WithGlobalTag("_dd.origin", "lambda"),
-	)
+	}
+	opts = append(opts, l.startOptions...)
+	tracer.Start(opts...)
 
 	functionExecutionSpan = startFunctionExecutionSpan(ctx, l.mergeXrayTraces)
 

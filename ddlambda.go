@@ -51,6 +51,8 @@ type (
 		DDTraceEnabled bool
 		// MergeXrayTraces will cause Datadog traces to be merged with traces from AWS X-Ray.
 		MergeXrayTraces bool
+		// TracerStartOptions are forwarded to the tracer.Start() command
+		TracerStartOptions []trace.TracerStartOption
 		// HttpClientTimeout specifies a time limit for requests to the API. It defaults to 5s.
 		HttpClientTimeout time.Duration
 		// CircuitBreakerInterval is the cyclic period of the closed state
@@ -175,11 +177,13 @@ func (cfg *Config) toTraceConfig() trace.Config {
 	traceConfig := trace.Config{
 		DDTraceEnabled:  false,
 		MergeXrayTraces: false,
+		StartOptions:    []trace.TracerStartOption{},
 	}
 
 	if cfg != nil {
 		traceConfig.DDTraceEnabled = cfg.DDTraceEnabled
 		traceConfig.MergeXrayTraces = cfg.MergeXrayTraces
+		traceConfig.StartOptions = cfg.TracerStartOptions
 	}
 
 	if !traceConfig.DDTraceEnabled {
